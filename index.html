@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kesiswaan-SMP HQ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; margin: 0; overflow: hidden; }
+        
+        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); width: 260px; transition: all 0.3s ease; position: fixed; height: 100vh; z-index: 50; }
+        @media (max-width: 1024px) { .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .main-content { margin-left: 0 !important; } }
+        
+        .nav-link { transition: 0.2s; color: #94a3b8; border-radius: 12px; margin-bottom: 4px; padding: 12px 18px; font-weight: 700; display: flex; align-items: center; font-size: 14px; width: 100%; }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
+        .nav-link.active { background: #3b82f6; color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); }
+        
+        .page { display: none; min-height: 100%; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .card { background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #f1f5f9; }
+        
+        .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { background: #f8fafc; color: #64748b; font-size: 10px; text-transform: uppercase; padding: 12px 8px; font-weight: 800; border-bottom: 2px solid #f1f5f9; text-align: center; white-space: nowrap; }
+        td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; font-size: 11px; font-weight: 600; text-align: center; }
+        
+        input, select, textarea { border: 2px solid #e2e8f0 !important; padding: 8px 12px !important; border-radius: 10px !important; font-size: 13px; width: 100%; outline: none; transition: 0.2s; }
+        input:focus { border-color: #3b82f6 !important; }
+        label { font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: block; }
+        
+        .badge-status { padding: 3px 8px; border-radius: 6px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+        .status-iqro { background: #fee2e2; color: #dc2626; }
+        .status-binnadzor { background: #fef3c7; color: #d97706; }
+        .status-murojaah { background: #dcfce7; color: #16a34a; }
+        .status-dauroh { background: #ede9fe; color: #7c3aed; }
+
+        .btn-pdf { background: #1e293b; color: white; padding: 6px 14px; border-radius: 8px; font-weight: 800; font-size: 9px; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; }
+        .overlay.active { display: block; }
+    </style>
+</head>
+<body class="flex">
+
+    <div id="overlay" class="overlay" onclick="toggleSidebar()"></div>
+
+    <aside id="sidebar" class="sidebar flex flex-col p-6 shrink-0">
+        <div class="flex items-center justify-between mb-8 px-2">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-500 p-2 rounded-xl shadow-lg"><i class="fas fa-university text-white text-xl"></i></div>
+                <span class="text-xl font-black text-white uppercase tracking-tighter">SMP HQ</span>
+            </div>
+            <button onclick="toggleSidebar()" class="lg:hidden text-white text-2xl"><i class="fas fa-times"></i></button>
+        </div>
+        <nav class="flex-1 space-y-1 overflow-y-auto">
+            <button onclick="nav('dashboard')" id="nav-dashboard" class="nav-link active"><i class="fas fa-home w-6"></i> Dashboard</button>
+            <p class="text-[10px] font-bold text-slate-500 uppercase px-4 mt-6 mb-2">Siswa</p>
+            <button onclick="nav('siswa-aktif')" id="nav-siswa-aktif" class="nav-link"><i class="fas fa-users w-6"></i> Siswa Aktif</button>
+            <button onclick="nav('siswa-mutasi')" id="nav-siswa-mutasi" class="nav-link"><i class="fas fa-user-minus w-6"></i> Siswa Mutasi</button>
+            <p class="text-[10px] font-bold text-slate-500 uppercase px-4 mt-6 mb-2">Akademik</p>
+            <button onclick="nav('absensi')" id="nav-absensi" class="nav-link"><i class="fas fa-check-double w-6"></i> Presensi</button>
+            <button onclick="nav('hafalan')" id="nav-hafalan" class="nav-link"><i class="fas fa-quran w-6"></i> Hafalan Quran</button>
+            <button onclick="nav('pelanggaran')" id="nav-pelanggaran" class="nav-link"><i class="fas fa-gavel w-6"></i> Pelanggaran</button>
+            <button onclick="nav('prestasi')" id="nav-prestasi" class="nav-link"><i class="fas fa-award w-6"></i> Prestasi</button>
+        </nav>
+    </aside>
+
+    <main class="main-content flex-1 flex flex-col h-screen lg:ml-[260px] w-full bg-slate-50">
+        <header class="h-16 bg-white border-b px-4 lg:px-8 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="lg:hidden text-slate-600 text-xl"><i class="fas fa-bars"></i></button>
+                <h2 id="page-title" class="font-black text-slate-800 uppercase tracking-widest text-[10px] sm:text-xs">DASHBOARD</h2>
+            </div>
+            <div id="live-clock" class="hidden md:block text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-full"></div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 lg:p-6">
+            
+            <section id="page-dashboard" class="page active">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="card p-4 border-l-4 border-blue-600"><p class="text-[9px] font-bold text-slate-400 uppercase">Siswa Aktif</p><h3 id="stat-siswa" class="text-xl font-black">0</h3></div>
+                    <div class="card p-4 border-l-4 border-emerald-600"><p class="text-[9px] font-bold text-slate-400 uppercase">Hadir Hari Ini</p><h3 id="stat-hadir" class="text-xl font-black text-emerald-600">0</h3></div>
+                    <div class="card p-4 border-l-4 border-rose-600"><p class="text-[9px] font-bold text-slate-400 uppercase">Total Kasus</p><h3 id="stat-hadir-kasus" class="text-xl font-black text-rose-600">0</h3></div>
+                    <div class="card p-4 border-l-4 border-amber-600"><p class="text-[9px] font-bold text-slate-400 uppercase">Siswa Mutasi</p><h3 id="stat-mutasi" class="text-xl font-black text-amber-500">0</h3></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card p-4 h-72"><canvas id="chartSiswaLine"></canvas></div>
+                    <div class="card p-4 h-72"><canvas id="chartAbsensiDonut"></canvas></div>
+                </div>
+            </section>
+
+            <section id="page-siswa-aktif" class="page">
+                <div class="card mb-6">
+                    <div class="p-3 bg-slate-900 text-white font-bold text-[10px] uppercase">Registrasi Siswa Baru</div>
+                    <form onsubmit="addSiswa(event)" class="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div><label>Nama Lengkap</label><input id="s-name" required></div>
+                        <div><label>NISN</label><input id="s-nisn" required></div>
+                        <div><label>No. HP/WA</label><input id="s-phone" required></div>
+                        <div><label>Kelas</label><select id="s-class"><option>Kelas 7</option><option>Kelas 8</option><option>Kelas 9</option></select></div>
+                        <div class="sm:col-span-2"><label>Alamat Lengkap</label><input id="s-address"></div>
+                        <div><label>Tahun Masuk</label><input id="s-year" required></div>
+                        <div class="flex items-end"><button type="submit" class="w-full bg-blue-600 text-white font-black h-[40px] rounded-xl text-xs">SIMPAN</button></div>
+                    </form>
+                </div>
+                <div class="flex justify-between items-center mb-4"><h3 class="font-black text-[10px] uppercase">Database Aktif</h3><button onclick="downloadPDF('siswa-aktif')" class="btn-pdf"><i class="fas fa-file-pdf"></i> UNDUH PDF</button></div>
+                <div class="card table-responsive"><table id="table-siswa-aktif"><thead><tr><th>Nama Siswa</th><th>NISN</th><th>No. HP</th><th>Kelas</th><th>Masuk</th><th>Alamat</th><th>Aksi</th></tr></thead><tbody id="list-siswa"></tbody></table></div>
+            </section>
+
+            <section id="page-hafalan" class="page">
+                <div class="card mb-6 border-t-4 border-blue-500">
+                    <div class="p-3 bg-slate-900 text-white font-bold text-[10px] uppercase">Input Capaian Hafalan</div>
+                    <form onsubmit="addHafalan(event)" class="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div><label>Pilih Siswa</label><select id="h-nama" required><option value="">-- Pilih Siswa Aktif --</option></select></div>
+                        <div><label>Kelas</label><select id="h-kelas"><option>Kelas 7</option><option>Kelas 8</option><option>Kelas 9</option></select></div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div><label>Bulan</label><select id="h-bulan"><option>Januari</option><option>Februari</option><option>Maret</option><option>April</option><option>Mei</option><option>Juni</option><option>Juli</option><option>Agustus</option><option>September</option><option>Oktober</option><option>November</option><option>Desember</option></select></div>
+                            <div><label>Minggu</label><select id="h-minggu"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+                        </div>
+                        <div><label>Tanggal</label><input type="date" id="h-tgl" required></div>
+                        <div><label>Awal Setoran</label><input id="h-awal" placeholder="Contoh: An-Naba 1" required></div>
+                        <div><label>Akhir Setoran</label><input id="h-akhir" placeholder="Contoh: An-Naba 20" required></div>
+                        <div><label>Perolehan Hafalan Saat Ini</label><input id="h-total" placeholder="Contoh: 5 Juz / Juz 30" required></div>
+                        <div><label>Status Hafalan</label><select id="h-status"><option value="Iqro">Iqro</option><option value="Binnadzor">Binnadzor</option><option value="Murojaah 1">Murojaah 1</option><option value="Murojaah 2">Murojaah 2</option><option value="Murojaah 3">Murojaah 3</option><option value="Dauroh Tasmik">Dauroh Tasmik</option></select></div>
+                        <div class="flex items-end"><button type="submit" class="w-full bg-blue-600 text-white font-black h-[40px] rounded-xl text-xs uppercase">Simpan Hafalan</button></div>
+                    </form>
+                </div>
+                <div class="flex justify-between items-center mb-4"><h3 class="font-black text-[10px] uppercase">Rekapitulasi Hafalan</h3><button onclick="downloadPDF('hafalan')" class="btn-pdf"><i class="fas fa-file-pdf"></i> UNDUH PDF</button></div>
+                <div class="card table-responsive"><table id="table-hafalan"><thead><tr><th>Bulan/Mgg</th><th>Tanggal</th><th>Nama Siswa</th><th>Kelas</th><th>Awal</th><th>Akhir</th><th class="bg-blue-50">Perolehan</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="list-hafalan"></tbody></table></div>
+            </section>
+
+            <section id="page-siswa-mutasi" class="page">
+                <div class="flex justify-between items-center mb-4"><h3 class="font-black text-[10px] uppercase text-purple-700">Arsip Mutasi</h3><button onclick="downloadPDF('siswa-mutasi')" class="btn-pdf bg-purple-900"><i class="fas fa-file-pdf"></i> UNDUH PDF</button></div>
+                <div class="card table-responsive"><table id="table-siswa-mutasi"><thead><tr><th>Nama Siswa</th><th>NISN</th><th>No. HP</th><th>Kelas</th><th>Masuk</th><th>Alamat</th><th>Aksi</th></tr></thead><tbody id="list-mutasi"></tbody></table></div>
+            </section>
+
+            <section id="page-pelanggaran" class="page">
+                <div class="card mb-6 border-t-4 border-rose-500">
+                    <div class="p-3 bg-rose-600 text-white font-bold text-[10px] uppercase">Input Kedisiplinan</div>
+                    <form onsubmit="addViolation(event)" class="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div><label>Nama Siswa</label><input id="v-name" required></div>
+                        <div><label>Kelas</label><select id="v-class"><option>Kelas 7</option><option>Kelas 8</option><option>Kelas 9</option></select></div>
+                        <div><label>Tanggal</label><input id="v-date" type="date" required></div>
+                        <div><label>Level</label><select id="v-cat"><option>Ringan</option><option>Sedang</option><option>Berat</option></select></div>
+                        <div class="sm:col-span-2"><label>Jenis Pelanggaran</label><input id="v-type" required></div>
+                        <div class="sm:col-span-2"><label>Jenis Penanganan</label><input id="v-action" required></div>
+                        <div class="sm:col-span-2"><label>Guru Penindak</label><input id="v-guru" required></div>
+                        <div class="sm:col-span-2"><label>Sanksi</label><input id="v-sanksi" required></div>
+                        <button type="submit" class="sm:col-span-4 bg-rose-600 text-white font-bold py-2 rounded-xl text-xs">SIMPAN LAPORAN</button>
+                    </form>
+                </div>
+                <div class="flex justify-between items-center mb-4"><h3 class="font-black text-[10px] uppercase text-rose-600">Riwayat Kasus</h3><button onclick="downloadPDF('pelanggaran')" class="btn-pdf bg-rose-800"><i class="fas fa-file-pdf"></i> UNDUH PDF</button></div>
+                <div class="card table-responsive"><table id="table-pelanggaran"><thead><tr><th>Tgl</th><th>Nama</th><th>Kelas</th><th>Level</th><th>Pelanggaran</th><th>Penanganan</th><th>Guru</th><th>Sanksi</th><th>Aksi</th></tr></thead><tbody id="list-pelanggaran"></tbody></table></div>
+            </section>
+
+            <section id="page-absensi" class="page">
+                <div class="card p-5 mb-6 flex flex-col sm:flex-row gap-4 items-end">
+                    <div class="w-full sm:w-1/3"><label id="label-hari-absensi">Tanggal Presensi</label><input type="date" id="absensi-date" onchange="renderAbsensi()"></div>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button onclick="saveAbsensi()" class="flex-1 bg-emerald-600 text-white font-black px-6 py-2 rounded-xl text-[10px] shadow-lg">SIMPAN</button>
+                        <button onclick="downloadPDF('absensi')" class="btn-pdf"><i class="fas fa-file-pdf"></i> UNDUH PDF</button>
+                    </div>
+                </div>
+                <div class="card table-responsive"><table id="table-absensi"><thead><tr><th>Nama Siswa</th><th>H</th><th>I</th><th>S</th><th>A</th><th>Keterangan</th></tr></thead><tbody id="list-absensi"></tbody></table></div>
+            </section>
+
+            <section id="page-prestasi" class="page">
+                <div class="card mb-6 border-t-4 border-amber-500">
+                    <div class="p-3 bg-amber-500 text-white font-bold text-[10px] uppercase">Input Prestasi Siswa</div>
+                    <form onsubmit="addAchievement(event)" class="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div><label>Nama Siswa</label><input id="p-name" required></div>
+                        <div><label>Kelas</label><select id="p-class"><option>Kelas 7</option><option>Kelas 8</option><option>Kelas 9</option></select></div>
+                        <div><label>Juara</label><input id="p-rank" required></div>
+                        <div><label>Tanggal</label><input id="p-date" type="date" required></div>
+                        <div class="sm:col-span-2"><label>Lomba / Bidang</label><input id="p-desc" required></div>
+                        <div class="sm:col-span-2"><label>Pembimbing</label><input id="p-coach" required></div>
+                        <button type="submit" class="sm:col-span-4 bg-amber-500 text-white font-black py-2 rounded-xl text-xs">SIMPAN PRESTASI</button>
+                    </form>
+                </div>
+                <div class="flex justify-between items-center mb-4"><h3 class="font-black text-[10px] uppercase text-amber-600">Daftar Penghargaan</h3><button onclick="downloadPDF('prestasi')" class="btn-pdf bg-amber-800"><i class="fas fa-file-pdf"></i> UNDUH PDF</button></div>
+                <div class="card table-responsive"><table id="table-prestasi"><thead><tr><th>Tgl</th><th>Nama Siswa</th><th>Kelas</th><th>Juara</th><th>Lomba</th><th>Pembimbing</th><th>Aksi</th></tr></thead><tbody id="list-prestasi"></tbody></table></div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        function getNamaHari(dateString) {
+            if(!dateString) return "";
+            const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+            const d = new Date(dateString);
+            return days[d.getDay()];
+        }
+
+        let db = {
+            siswa: JSON.parse(localStorage.getItem('hq_sky_siswa')) || [],
+            mutasi: JSON.parse(localStorage.getItem('hq_sky_mutasi')) || [],
+            pelanggaran: JSON.parse(localStorage.getItem('hq_sky_pel')) || [],
+            prestasi: JSON.parse(localStorage.getItem('hq_sky_pre')) || [],
+            absensi: JSON.parse(localStorage.getItem('hq_sky_abs')) || {},
+            hafalan: JSON.parse(localStorage.getItem('hq_sky_hafalan')) || []
+        };
+
+        const save = () => {
+            localStorage.setItem('hq_sky_siswa', JSON.stringify(db.siswa));
+            localStorage.setItem('hq_sky_mutasi', JSON.stringify(db.mutasi));
+            localStorage.setItem('hq_sky_pel', JSON.stringify(db.pelanggaran));
+            localStorage.setItem('hq_sky_pre', JSON.stringify(db.prestasi));
+            localStorage.setItem('hq_sky_abs', JSON.stringify(db.absensi));
+            localStorage.setItem('hq_sky_hafalan', JSON.stringify(db.hafalan));
+            updateCharts();
+        };
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('active'); }
+        
+        function nav(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.getElementById('page-' + id).classList.add('active');
+            document.getElementById('nav-' + id).classList.add('active');
+            document.getElementById('page-title').innerText = id.replace('-', ' ').toUpperCase();
+            if(window.innerWidth < 1024 && document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
+            renderAll();
+        }
+
+        function addSiswa(e) {
+            e.preventDefault();
+            db.siswa.unshift({ id: Date.now(), name: document.getElementById('s-name').value, nisn: document.getElementById('s-nisn').value, phone: document.getElementById('s-phone').value, class: document.getElementById('s-class').value, year: document.getElementById('s-year').value, address: document.getElementById('s-address').value });
+            save(); renderAll(); e.target.reset();
+        }
+
+        // FUNGSI HAFALAN BARU
+        function addHafalan(e) {
+            e.preventDefault();
+            db.hafalan.unshift({
+                id: Date.now(),
+                nama: document.getElementById('h-nama').value,
+                kelas: document.getElementById('h-kelas').value,
+                bulan: document.getElementById('h-bulan').value,
+                minggu: document.getElementById('h-minggu').value,
+                tgl: document.getElementById('h-tgl').value,
+                awal: document.getElementById('h-awal').value,
+                akhir: document.getElementById('h-akhir').value,
+                total: document.getElementById('h-total').value,
+                status: document.getElementById('h-status').value
+            });
+            save(); renderAll(); e.target.reset();
+            document.getElementById('h-tgl').valueAsDate = new Date();
+        }
+
+        function renderAll() {
+            // Update dropdown Nama Siswa di form Hafalan dari data Siswa Aktif
+            const hNamaSelect = document.getElementById('h-nama');
+            const currentVal = hNamaSelect.value;
+            hNamaSelect.innerHTML = '<option value="">-- Pilih Siswa Aktif --</option>' + 
+                db.siswa.map(s => `<option value="${s.name}">${s.name} (${s.class})</option>`).join('');
+            hNamaSelect.value = currentVal;
+
+            document.getElementById('list-siswa').innerHTML = db.siswa.map(s => `<tr><td class="text-left font-bold text-blue-600 uppercase">${s.name}</td><td>${s.nisn}</td><td>${s.phone}</td><td>${s.class}</td><td class="font-bold">${s.year}</td><td class="text-[9px] text-left">${s.address}</td><td><button onclick="setMutasi(${s.id})" class="text-purple-500 mr-2"><i class="fas fa-exchange-alt"></i></button><button onclick="del('siswa', ${s.id})" class="text-rose-300"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+            document.getElementById('list-mutasi').innerHTML = db.mutasi.map(s => `<tr><td class="text-left font-bold text-purple-600 uppercase">${s.name}</td><td>${s.nisn}</td><td>${s.phone}</td><td>${s.class}</td><td>${s.year}</td><td class="text-[9px] text-left">${s.address}</td><td><button onclick="restoreSiswa(${s.id})" class="text-emerald-500 mr-2"><i class="fas fa-undo"></i></button><button onclick="del('mutasi', ${s.id})" class="text-rose-300"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+            document.getElementById('list-pelanggaran').innerHTML = db.pelanggaran.map(v => `<tr><td><span class="block text-[9px] text-slate-400 font-bold">${getNamaHari(v.date)}</span>${v.date}</td><td class="font-bold uppercase">${v.name}</td><td>${v.class}</td><td class="text-rose-600 font-bold">${v.cat}</td><td class="text-[10px] italic">${v.type || '-'}</td><td class="text-blue-600 text-[10px]">${v.action || '-'}</td><td>${v.guru}</td><td class="text-emerald-700">${v.sanksi}</td><td><button onclick="del('pelanggaran', ${v.id})" class="text-rose-200"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+            document.getElementById('list-prestasi').innerHTML = db.prestasi.map(p => `<tr><td><span class="block text-[9px] text-slate-400 font-bold">${getNamaHari(p.date)}</span>${p.date}</td><td class="font-bold text-amber-600 uppercase">${p.name}</td><td>${p.class}</td><td>${p.rank}</td><td class="text-[10px]">${p.desc}</td><td class="font-bold text-slate-600">${p.coach}</td><td><button onclick="del('prestasi', ${p.id})" class="text-rose-200"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+            
+            // Render Tabel Hafalan
+            document.getElementById('list-hafalan').innerHTML = db.hafalan.map(h => {
+                let sCls = h.status.includes('Murojaah') ? 'status-murojaah' : (h.status === 'Binnadzor' ? 'status-binnadzor' : (h.status === 'Dauroh Tasmik' ? 'status-dauroh' : 'status-iqro'));
+                return `<tr>
+                    <td class="font-bold text-slate-500">${h.bulan} (M-${h.minggu})</td>
+                    <td class="text-slate-400">${h.tgl}</td>
+                    <td class="text-blue-600 font-bold uppercase text-left">${h.nama}</td>
+                    <td>${h.kelas}</td>
+                    <td>${h.awal}</td>
+                    <td>${h.akhir}</td>
+                    <td class="font-black text-blue-800 bg-blue-50/50">${h.total}</td>
+                    <td><span class="badge-status ${sCls}">${h.status}</span></td>
+                    <td><button onclick="del('hafalan', ${h.id})" class="text-rose-300"><i class="fas fa-trash"></i></button></td>
+                </tr>`;
+            }).join('');
+
+            renderAbsensi();
+        }
+
+        function del(type, id) { if(confirm('Hapus data ini?')) { db[type] = db[type].filter(x=>x.id!==id); save(); renderAll(); } }
+        function setMutasi(id) { if(confirm('Siswa mutasi?')) { let i = db.siswa.findIndex(x=>x.id===id); db.mutasi.unshift(db.siswa[i]); db.siswa.splice(i,1); save(); renderAll(); } }
+        function restoreSiswa(id) { if(confirm('Aktifkan kembali?')) { let i = db.mutasi.findIndex(x=>x.id===id); db.siswa.unshift(db.mutasi[i]); db.mutasi.splice(i,1); save(); renderAll(); } }
+
+        function renderAbsensi() {
+            const d = document.getElementById('absensi-date').value; 
+            if(!d) return;
+            document.getElementById('label-hari-absensi').innerText = "Presensi: " + getNamaHari(d);
+            const rec = db.absensi[d] || [];
+            document.getElementById('list-absensi').innerHTML = db.siswa.map(s => {
+                const r = rec.find(x => x.id === s.id) || {status:'H', note:''};
+                return `<tr><td class="text-left font-bold uppercase text-[10px]">${s.name}</td><td><input type="radio" name="ab-${s.id}" value="H" ${r.status==='H'?'checked':''}></td><td><input type="radio" name="ab-${s.id}" value="I" ${r.status==='I'?'checked':''}></td><td><input type="radio" name="ab-${s.id}" value="S" ${r.status==='S'?'checked':''}></td><td><input type="radio" name="ab-${s.id}" value="A" ${r.status==='A'?'checked':''}></td><td><input id="n-${s.id}" value="${r.note}" class="!p-1 text-[10px] border-b !rounded-none"></td></tr>`;
+            }).join('');
+        }
+
+        function saveAbsensi() {
+            const d = document.getElementById('absensi-date').value;
+            db.absensi[d] = db.siswa.map(s => ({ id: s.id, status: document.querySelector(`input[name="ab-${s.id}"]:checked`).value, note: document.getElementById('n-'+s.id).value }));
+            save(); alert('Presensi disimpan!');
+        }
+
+        function addViolation(e) { 
+            e.preventDefault(); 
+            db.pelanggaran.unshift({ id:Date.now(), name:document.getElementById('v-name').value, class:document.getElementById('v-class').value, date:document.getElementById('v-date').value, cat:document.getElementById('v-cat').value, type:document.getElementById('v-type').value, action:document.getElementById('v-action').value, guru:document.getElementById('v-guru').value, sanksi:document.getElementById('v-sanksi').value }); 
+            save(); renderAll(); e.target.reset(); 
+        }
+        
+        function addAchievement(e) { 
+            e.preventDefault(); 
+            db.prestasi.unshift({ id:Date.now(), name:document.getElementById('p-name').value, class:document.getElementById('p-class').value, date:document.getElementById('p-date').value, rank:document.getElementById('p-rank').value, desc:document.getElementById('p-desc').value, coach:document.getElementById('p-coach').value }); 
+            save(); renderAll(); e.target.reset(); 
+        }
+
+        function downloadPDF(type) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            const pageWidth = doc.internal.pageSize.getWidth();
+            doc.setFontSize(14); doc.setFont("helvetica", "bold");
+            doc.text("LAPORAN " + type.toUpperCase().replace('-', ' '), pageWidth / 2, 12, { align: "center" });
+            doc.setFontSize(16);
+            doc.text("SMP HAMALATUL QUR'AN RINGINAGUNG", pageWidth / 2, 20, { align: "center" });
+            doc.autoTable({ 
+                html: '#table-' + type, 
+                startY: 28, 
+                theme: 'grid', 
+                styles: { fontSize: 7, halign: 'center', valign: 'middle', cellPadding: 2 },
+                headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255] },
+                columns: (type === 'pelanggaran' || type === 'hafalan') ? [0,1,2,3,4,5,6,7] : null 
+            });
+            doc.save(`SMPHQ_${type}_${new Date().getTime()}.pdf`);
+        }
+
+        function updateCharts() {
+            document.getElementById('stat-siswa').innerText = db.siswa.length;
+            document.getElementById('stat-mutasi').innerText = db.mutasi.length;
+            document.getElementById('stat-hadir-kasus').innerText = db.pelanggaran.length;
+            const d = document.getElementById('absensi-date').value;
+            const rec = db.absensi[d] || [];
+            document.getElementById('stat-hadir').innerText = rec.filter(x=>x.status==='H').length;
+            if(charts.line) {
+                const yrs = [...new Set(db.siswa.map(s => s.year))].sort();
+                charts.line.data.labels = yrs;
+                charts.line.data.datasets[0].data = yrs.map(y => db.siswa.filter(s => s.year === y).length);
+                charts.line.update();
+            }
+        }
+
+        let charts = {};
+        window.onload = () => {
+            document.getElementById('absensi-date').valueAsDate = new Date();
+            document.getElementById('h-tgl').valueAsDate = new Date();
+            charts.line = new Chart(document.getElementById('chartSiswaLine'), { type: 'line', data: { labels: [], datasets: [{ label: 'Pertumbuhan Siswa', data: [], borderColor: '#3b82f6', tension: 0.3, fill: true, backgroundColor: 'rgba(59, 130, 246, 0.1)' }] }, options: { maintainAspectRatio: false, plugins: { legend: { labels: { font: { size: 10, weight: 'bold' } } } } } });
+            charts.donut = new Chart(document.getElementById('chartAbsensiDonut'), { type: 'doughnut', data: { labels: ['H','I','S','A'], datasets: [{ data: [1,0,0,0], backgroundColor: ['#10b981', '#f59e0b', '#3b82f6', '#ef4444'] }] }, options: { maintainAspectRatio: false } });
+            updateCharts();
+            setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('id-ID') + ' WIB'; }, 1000);
+            nav('dashboard');
+        };
+    </script>
+</body>
+</html>
