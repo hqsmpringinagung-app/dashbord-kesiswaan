@@ -55,7 +55,7 @@
         <div class="flex items-center justify-between mb-8 px-2">
             <div class="flex items-center gap-3">
                 <div class="bg-blue-500 p-2 rounded-xl shadow-lg"><i class="fas fa-university text-white text-xl"></i></div>
-                <span class="text-xl font-black text-white uppercase tracking-tighter">SMP HQ</span>
+                <span class="text-xl font-black text-white uppercase tracking-tighter">KESISWAAN - SMP HQ</span>
             </div>
             <button onclick="toggleSidebar()" class="lg:hidden text-white text-2xl"><i class="fas fa-times"></i></button>
         </div>
@@ -167,7 +167,7 @@
                         <button onclick="downloadPDF('absensi')" class="btn-pdf"><i class="fas fa-file-pdf"></i> UNDUH PDF</button>
                     </div>
                 </div>
-                <div class="card table-responsive"><table id="table-absensi"><thead><tr><th>Nama Siswa</th><th>H</th><th>I</th><th>S</th><th>A</th><th>Keterangan</th></tr></thead><tbody id="list-absensi"></tbody></table></div>
+                <div class="card table-responsive"><table id="table-absensi"><thead><tr><th>Nama Siswa</th><th>HADIR</th><th>IZIN</th><th>SAKIT</th><th>ALPHA</th><th>Keterangan</th></tr></thead><tbody id="list-absensi"></tbody></table></div>
             </section>
 
             <section id="page-prestasi" class="page">
