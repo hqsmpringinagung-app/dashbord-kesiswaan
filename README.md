@@ -100,8 +100,9 @@
                 <div class="card mb-6">
                     <div class="p-3 bg-slate-900 text-white font-bold text-[10px] uppercase">Registrasi Siswa Baru</div>
                     <form onsubmit="addSiswa(event)" class="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div><label>Nama Lengkap</label><input id="s-name" required></div>
-                        <div><label>NISN</label><input id="s-nisn" required></div>
+                         <div><label>Nama Lengkap</label><input id="s-name" required></div>
+                            <div><label>NISN</label><input id="s-nisn" required></div>
+                        <div><label>Tempat, Tgl Lahir</label><input id="s-ttl" placeholder="Contoh: Magetan, 01/01/2010" required></div>
                         <div><label>No. HP/WA</label><input id="s-phone" required></div>
                         <div><label>Kelas</label><select id="s-class"><option>Kelas 7</option><option>Kelas 8</option><option>Kelas 9</option></select></div>
                         <div class="sm:col-span-2"><label>Alamat Lengkap</label><input id="s-address"></div>
@@ -110,7 +111,7 @@
                     </form>
                 </div>
                 <div class="flex justify-between items-center mb-4"><h3 class="font-black text-[10px] uppercase">Database Aktif</h3><button onclick="downloadPDF('siswa-aktif')" class="btn-pdf"><i class="fas fa-file-pdf"></i> UNDUH PDF</button></div>
-                <div class="card table-responsive"><table id="table-siswa-aktif"><thead><tr><th>Nama Siswa</th><th>NISN</th><th>No. HP</th><th>Kelas</th><th>Masuk</th><th>Alamat</th><th>Aksi</th></tr></thead><tbody id="list-siswa"></tbody></table></div>
+                <div class="card table-responsive"><table id="table-siswa-aktif"><thead><tr><th>Nama Siswa</th><th>Tempat, Tgl Lahir</th><th>NISN</th><th>No. HP</th><th>Kelas</th><th>Masuk</th><th>Alamat</th><th>Aksi</th></tr></thead><tbody id="list-siswa"></tbody></table></div>
             </section>
 
             <section id="page-hafalan" class="page">
@@ -137,7 +138,7 @@
 
             <section id="page-siswa-mutasi" class="page">
                 <div class="flex justify-between items-center mb-4"><h3 class="font-black text-[10px] uppercase text-purple-700">Arsip Mutasi</h3><button onclick="downloadPDF('siswa-mutasi')" class="btn-pdf bg-purple-900"><i class="fas fa-file-pdf"></i> UNDUH PDF</button></div>
-                <div class="card table-responsive"><table id="table-siswa-mutasi"><thead><tr><th>Nama Siswa</th><th>NISN</th><th>No. HP</th><th>Kelas</th><th>Masuk</th><th>Alamat</th><th>Aksi</th></tr></thead><tbody id="list-mutasi"></tbody></table></div>
+                <div class="card table-responsive"><table id="table-siswa-mutasi"><thead><tr><th>Nama Siswa</th><th>Tempat, Tgl Lahir</th><th>NISN</th><th>No. HP</th><th>Kelas</th><th>Masuk</th><th>Alamat</th><th>Aksi</th></tr></thead><tbody id="list-mutasi"></tbody></table></div>
             </section>
 
             <section id="page-pelanggaran" class="page">
